@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import {
   MAX_AVATAR_SIZE_MB,
   VALID_FILE_TYPES_MIME,
 } from '../../common/types/ocorrencias-file';
+import { OcorrenciasContext } from '../../context/ocorrencias';
 import { sendFile } from '../../services/ocorrencias';
 import { ErrorAlert } from '../alerts/error';
 import { SuccessAlert } from '../alerts/success';
 import { LoadingSpinner } from '../animations/loading';
 
 const OcorrenciasForm = () => {
+  const { setOcorrencias } = useContext(OcorrenciasContext);
   const [loading, setLoading] = useState<boolean>(false);
   const [success, setSuccess] = useState<string>();
   const [error, setError] = useState<Error>();
@@ -48,8 +50,10 @@ const OcorrenciasForm = () => {
 
     sendFile(selectedFile!)
       .then((data) => {
-        console.log('data: ', data);
-        setSuccess('A planilha foi carregada com sucesso');
+        setOcorrencias(data);
+        setSuccess(
+          'A planilha foi processada com sucesso. Os gráficos serão carregados em alguns instantes...'
+        );
       })
       .catch((err: Error) => setError(err))
       .finally(() => setLoading(false));
