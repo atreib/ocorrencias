@@ -22,6 +22,7 @@
     "prettier/prettier": "error",
       "import/prefer-default-export": "off",
       "import/extensions": "off",
-      "@typescript-eslint/no-non-null-assertion": "off"
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "import/no-anonymous-default-export": "off"
   }
 }
