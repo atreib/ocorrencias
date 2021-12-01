@@ -1,5 +1,6 @@
+import xlsx from 'node-xlsx';
 import { NextApiRequest, NextApiResponse } from 'next';
-import formidable, { IncomingForm, Fields, Files } from 'formidable';
+import formidable, { IncomingForm, Fields, Files, File } from 'formidable';
 import {
   Ocorrencia,
   VALID_FILE_TYPES_MIME,
@@ -29,6 +30,40 @@ const getFileFromRequest = async (_req: NextApiRequest) =>
     }
   );
 
+const processFile = async (file: File): Promise<Ocorrencia[]> => {
+  const workSheetsFromBuffer = xlsx.parse(file.filepath);
+  if (
+    !workSheetsFromBuffer ||
+    workSheetsFromBuffer.length == 0 ||
+    !workSheetsFromBuffer[0].data
+  ) {
+    throw new Error('O arquivo enviado é inválido');
+  }
+  const planilha = workSheetsFromBuffer[0].data as string[][];
+  planilha.shift();
+
+  if (!planilha) throw new Error('O arquivo enviado é inválido');
+
+  // COLOCAR AQUI O NUMERO DE CADA COLUNA (começando a contar por 0)
+  const NRO_COLUNA_FATO = 1;
+  const NRO_COLUNA_MES = 2;
+  const NRO_COLUNA_BAIRRO = 9;
+
+  const dados = planilha
+    ?.map((linha) => {
+      const fato = linha[NRO_COLUNA_FATO];
+      const mes = linha[NRO_COLUNA_MES];
+      const bairro = linha[NRO_COLUNA_BAIRRO];
+
+      if (fato && mes && bairro) {
+        return { fato, mes, bairro };
+      }
+    })
+    .filter((x) => x);
+
+  return dados as Ocorrencia[];
+};
+
 export default async (_req: NextApiRequest, res: NextApiResponse) => {
   try {
     // Formatando o request para tratar o envio de arquivos usando a lib Formidable
@@ -46,10 +81,10 @@ export default async (_req: NextApiRequest, res: NextApiResponse) => {
       throw new Error('O tipo de arquivo selecionado é inválido.');
     }
 
-    // TODO: Processando o arquivo
-    const data = [{}] as Ocorrencia[];
+    // Processando a planilha e criando um JSON com todos os dados
+    const data = await processFile(file as File);
 
-    return res.status(200).json(data);
+    return res.status(200).send(data);
   } catch (err) {
     console.error(err);
     return res.status(500).send(err);
